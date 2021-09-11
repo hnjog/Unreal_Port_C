@@ -37,6 +37,7 @@ void ACEnemy_Base::Tick(float DeltaTime)
 {
 	if (bUseLerpTurn == true)
 	{
+		CLog::Print("In");
 		LerpTurn(DeltaTime);
 	}
 
@@ -46,18 +47,18 @@ void ACEnemy_Base::Tick(float DeltaTime)
 
 		CheckTrue(GetCharacterMovement()->IsFalling());
 
-		CLog::Print("IS falling", 2);
-		CLog::Print(GetVelocity(), 3);
-		CLog::Print(GetVelocity().Size(), 4);
+		//CLog::Print("IS falling", 2);
+		//CLog::Print(GetVelocity(), 3);
+		//CLog::Print(GetVelocity().Size(), 4);
 
 		// Hit Animation이 재생되어 , Idle로 돌아와서 Wakeup이 안되는 것은...??
 		WakeUpTimer += DeltaTime;
 
-		CLog::Print(WakeUpTimer, 5);
+		//CLog::Print(WakeUpTimer, 5);
 
 		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true)
 		{
-			CLog::Print("WakeUp_Start", 6);
+			//CLog::Print("WakeUp_Start", 6);
 			State->SetWakeUpMode();
 			WakeUpTimer = 0.0f;
 			return;
@@ -125,11 +126,9 @@ void ACEnemy_Base::OnStateTypeChanged(EStateType InPrevType, EStateType InNewTyp
 
 void ACEnemy_Base::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//CLog::Print(OtherActor->GetName());
-	HittedResult = Hit;
-
-	if (State->IsKnockOutMode())
+	if (State->IsKnockOutMode() == true)
 	{
+		HittedResult = Hit;
 		LaunchByHitted();
 	}
 }
@@ -211,26 +210,12 @@ void ACEnemy_Base::End_WakeUp()
 void ACEnemy_Base::LaunchByHitted()
 {
 	CheckFalse(bDamagedLastAttack);
-
-	// 가드와 패링 기능을 추가하고 이상해짐
-	/*
-		1. normal이 이상하게 측정
-
-		2. 여러번 들어오게 되어 증폭이 됨
-		- 이건 아님
-
-		3. Popcorn 상태나 다른 상태의 이상..??
-		- 이건 건들이지 않았는데?
-
-	*/
-
 	bDamagedLastAttack = false;
 
 	FVector up = FVector::UpVector;
 
 	FVector Direction = HittedResult.ImpactNormal * LauchValue + up * LauchUpValue;
 
-	CLog::Print(Direction, 1);
 
 	LaunchCharacter(Direction, false, true);
 }
@@ -239,18 +224,22 @@ void ACEnemy_Base::Popcorn()
 {
 	// Popcorn
 	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	StopAnimMontage();
 	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
+	StopAnimMontage();
+
+	GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+	
 	// 여기서 액터의 위치로 Tick마다 조정해주면 되지 않을까??
-	if (GetCharacterMovement()->IsFalling() == true)
+	/*if (GetCharacterMovement()->IsFalling() == true)
 	{
+		
 		GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
 	}
 	else
 	{
 		SetActorLocation(GetMesh()->GetComponentLocation());
-	}
+	}*/
 
 	GetMesh()->SetSimulatePhysics(true);
 }
@@ -262,6 +251,8 @@ void ACEnemy_Base::End_Popcorn()
 	//GetMesh()->AttachTo(GetCapsuleComponent());
 	GetMesh()->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	GetMesh()->SetWorldTransform(GetActorTransform());
+
+	// 이 부분도 차후 수정이 필요할 수 있다고 봄
 	GetMesh()->AddRelativeLocation(FVector(0, 0, -40));
 	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 }
@@ -276,12 +267,12 @@ void ACEnemy_Base::FixMesh()
 
 void ACEnemy_Base::LerpTurn(float Delta)
 {
-	CLog::Print("LerpIn!", 7);
+	//CLog::Print("LerpIn!", 7);
 
 	FRotator rotator = GetMesh()->GetComponentRotation();
 	FRotator target = GetActorRotation() + FRotator(0, -90, 0);
 
-	CLog::Print(rotator, 8);
+	//CLog::Print(rotator, 8);
 
 	// x쪽은 상관없고 오히려 끝났을 때 그 값으로 바꾸는게 나을듯 한데
 	// 그냥 rotator 값으로 체크하는게 나을듯

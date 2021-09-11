@@ -314,15 +314,20 @@ float ACPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AContr
 	float damage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	DamageInstigator = EventInstigator;
 
+	CLog::Print(bParrying ? "Parrying" : "Not Parrying");
+	CLog::Print(bGuard ? "Guard" : "Not Guard");
+
 	// 여기에 패링 상태일때 TakeDamage를 리턴시키는 부분 필요
 	if (bParrying == true)
 	{
+		bParrying = false;
 		return Status->GetHealth();
 	}
 
 	if (bGuard == true)
 	{
 		Status->SubHealth(damage * 0.25f);
+		bGuard = false;
 		return Status->GetHealth();
 	}
 

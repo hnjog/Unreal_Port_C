@@ -64,6 +64,8 @@ void ACAction_Melee::Begin_DoAction()
 	IndexAttack++;
 	FMath::Clamp<int32>(IndexAttack, 0, Datas.Num() - 1);
 
+	HittedCharacters.Empty();
+
 	OwnerCharacter->PlayAnimMontage(Datas[IndexAttack].AnimMontage, Datas[IndexAttack].PlayRate, Datas[IndexAttack].StartSection);
 	Datas[IndexAttack].bCanMove ? Status->SetMove() : Status->SetStop();
 }
@@ -75,6 +77,8 @@ void ACAction_Melee::End_DoAction()
 	OwnerCharacter->StopAnimMontage(Datas[IndexAttack].AnimMontage);
 	IndexAttack = 0;
 
+	HittedCharacters.Empty();
+	
 	State->SetIdleMode();
 	Status->SetMove();
 }
@@ -221,7 +225,7 @@ void ACAction_Melee::OnAttachmentEndOverlap(ACharacter* InAttacker, AActor* InAt
 {
 	Super::OnAttachmentEndOverlap(InAttacker, InAttackCauser, InOtherCharacter);
 
-	HittedCharacters.Empty();	// TArray 비우기
+	
 }
 
 void ACAction_Melee::OnGuardPointBeginOverlap(class AActor* DefenseTo, class AActor* InAttackCauser)
@@ -267,6 +271,14 @@ void ACAction_Melee::OnGuardPointBeginOverlap(class AActor* DefenseTo, class AAc
 
 void ACAction_Melee::OnGuardPointEndOverlap(ACharacter* InAttacker, AActor* InAttackCauser, ACharacter* InOtherCharacter)
 {
+	IICharacter* character = Cast<IICharacter>(OwnerCharacter);
+
+	if (!!character)
+	{
+		character->Parrying(false);
+		character->Guard(false);
+	}
+
 	StiffedCharacters.Empty();	// TArray 비우기
 }
 

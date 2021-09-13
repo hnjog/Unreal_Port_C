@@ -63,6 +63,10 @@ public:
 	// 요거 노티파이 클래스 만든뒤, 얻어올 필요가 있긴 함 (IIAbleInventory 에 이걸 넣을까 생각중)
 	FORCEINLINE class UCEquip_Arrow* GetEquipArrow() { return SelectedArrow; }
 
+public:
+	UFUNCTION(BlueprintImplementableEvent)
+		void InInventroy();
+
 private:
 	void OnMoveForward(float InAxis);
 	void OnMoveRight(float InAxis);
@@ -81,6 +85,7 @@ private:
 	void OffSpecial();
 
 	void OnPickUp();
+	void OnInventory();
 
 	UFUNCTION(BlueprintCallable, Category = "Items")
 		void OnUseItem(class UCItem* item) override;
@@ -93,6 +98,12 @@ private:
 
 	void Dead();
 	void End_Dead() override;
+
+	virtual void Stiff();
+	virtual void End_Stiff() override;
+
+	virtual void WakeUp();
+	virtual void End_WakeUp() override;
 
 	virtual void Parrying(bool result) override;
 	virtual void Guard(bool result) override;

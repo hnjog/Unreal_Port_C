@@ -95,33 +95,33 @@ void UCActionComponent::OnChangeItem(UCEquipItem* NewItem, bool result)
 		return;
 	}
 
+	if (NewItem->EquipType == EEquipType::MainWeapon)
+	{
+		if (Type == EActionType::Blade || Type == EActionType::Spear || Type == EActionType::TwoHand) SetUnarmedMode();
+
+		UCEquipItem_Weapon* weaponItem = Cast<UCEquipItem_Weapon>(NewItem);
+		switch (weaponItem->WeaponType)
+		{
+		case EMainWeapon::Blade:
+			type = EActionType::Blade;
+			break;
+		case EMainWeapon::GreatSword:
+			type = EActionType::TwoHand;
+			break;
+		case EMainWeapon::Spear:
+			type = EActionType::Spear;
+			break;
+		}
+	}
+
+	if (NewItem->EquipType == EEquipType::Bow)
+	{
+		type = EActionType::Bow;
+	}
+
 	if (result == true)
 	{
 		attach = NewItem->GetAttachment();
-
-		if (NewItem->EquipType == EEquipType::MainWeapon)
-		{
-			if (Type == EActionType::Blade || Type == EActionType::Spear || Type == EActionType::TwoHand) SetUnarmedMode();
-
-			UCEquipItem_Weapon* weaponItem = Cast<UCEquipItem_Weapon>(NewItem);
-			switch (weaponItem->WeaponType)
-			{
-			case EMainWeapon::Blade:
-				type = EActionType::Blade;
-				break;
-			case EMainWeapon::GreatSword:
-				type = EActionType::TwoHand;
-				break;
-			case EMainWeapon::Spear:
-				type = EActionType::Spear;
-				break;
-			}
-		}
-
-		if (NewItem->EquipType == EEquipType::Bow)
-		{
-			type = EActionType::Bow;
-		}
 
 		//if (Type != type)
 		//{
@@ -130,6 +130,13 @@ void UCActionComponent::OnChangeItem(UCEquipItem* NewItem, bool result)
 
 		Datas[(int32)type]->GetAction()->SetEquipValue(NewItem->GetItemValue());
 	}
+	else if(Type == type)
+	{
+		SetUnarmedMode();
+	}
+
+	CLog::Print(result ? "Equip" : "UnEquip");
+	CLog::Print((int)type);
 
 	AttachBind(type, attach);
 }

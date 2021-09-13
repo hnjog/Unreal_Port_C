@@ -37,7 +37,7 @@ void ACEnemy_Base::Tick(float DeltaTime)
 {
 	if (bUseLerpTurn == true)
 	{
-		CLog::Print("In");
+		//CLog::Print("In");
 		LerpTurn(DeltaTime);
 	}
 

@@ -119,6 +119,8 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Special", EInputEvent::IE_Released, this, &ACPlayer::OffSpecial);
 
 	PlayerInputComponent->BindAction("PickUp", EInputEvent::IE_Pressed, this, &ACPlayer::OnPickUp);
+
+	PlayerInputComponent->BindAction("Inventory", EInputEvent::IE_Pressed, this, &ACPlayer::OnInventory);
 }
 
 void ACPlayer::SetEquipItem(UCEquipItem* EquipItem, bool result)
@@ -295,6 +297,13 @@ void ACPlayer::OnPickUp()
 
 }
 
+void ACPlayer::OnInventory()
+{
+	CheckFalse(State->IsIdleMode());
+
+	InInventroy();
+}
+
 void ACPlayer::OnUseItem(class UCItem* item)
 {
 	if (item)
@@ -377,6 +386,26 @@ void ACPlayer::End_Dead()
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetWorld()->GetFirstPlayerController(), EQuitPreference::Quit, false);
 }
 
+void ACPlayer::Stiff()
+{
+	Montages->PlayStiff();
+}
+
+void ACPlayer::End_Stiff()
+{
+	State->SetIdleMode();
+}
+
+void ACPlayer::WakeUp()
+{
+
+}
+
+void ACPlayer::End_WakeUp()
+{
+	State->SetIdleMode();
+}
+
 void ACPlayer::Parrying(bool result)
 {
 	bParrying = result;
@@ -393,5 +422,7 @@ void ACPlayer::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)
 	{
 	case EStateType::Hitted: Hitted(); break;
 	case EStateType::Dead: Dead(); break;
+	case EStateType::Stiff: Stiff(); break;
+	case EStateType::WakeUp: WakeUp(); break;
 	}
 }

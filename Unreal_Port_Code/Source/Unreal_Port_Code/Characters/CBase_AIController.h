@@ -15,10 +15,7 @@ private:
 		float BehaviorRange = 150.0f;	// Change By Purpose
 
 	UPROPERTY(EditAnywhere)
-		float AttackRange = 300.0f;		// For By Pattern
-
-	UPROPERTY(EditAnywhere)
-		float SpecialRange = 150.0f;	// For By Pattern
+		float SpecialRange = 300.0f;	// For By Pattern
 
 	UPROPERTY(EditAnywhere)
 		bool bDrawDebug = true;
@@ -37,6 +34,7 @@ private:
 
 public:
 	FORCEINLINE float GetBehaviorRange() const { return BehaviorRange; }
+	FORCEINLINE float GetSpecialRange() const { return SpecialRange; }
 	float GetSightMaxAge();
 
 	//FORCEINLINE class UCBehaviorComponent* GetBehaviorComp() { return Behavior;}

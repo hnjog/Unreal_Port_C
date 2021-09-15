@@ -143,4 +143,15 @@ private:
 	반응이 필요함
 	(괜히 FlipFlop으로 만들었다가, 나중에 꼬일 염려가 존재하기에)
 
+	 가드 기능이 지나치게 Action_Melee에 가까운 것은 아닌가?
+	
+	 1. Enemy의 Do_Special은 순전히 공격 기능용이며,
+	 player의 방어 상태를 무력화 시킴
+	
+	 2. 근데 Melee로 잡아둔 enemy의 공격 기능이
+	 Do_Special() 에서 Guard Point On으로 되어 있음
+	 (+ Action Melee가 일일이 방어 capsule collision을 생성)
+
+	
+
 */

@@ -106,6 +106,30 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 	bTaunt = true;
 	aiPawn->SetBattleStance();
 
+	// 전투 상태
+
+	/*
+		Special 의 조건
+
+		슬라임
+		: 튀어오른뒤 대상 지점으로 찍는 방식
+
+		처음 우선 순위
+		쿨타임??
+
+		스페셜 우선 검사
+		-> 이후 쿨타임이 도는 중이라면,
+		액션 사용
+
+
+	*/
+
+	if (distance < controller->GetSpecialRange())
+	{
+		behavior->SetSpecialMode();
+		return;
+	}
+
 	// In Act Range
 	if (distance < controller->GetBehaviorRange())
 	{

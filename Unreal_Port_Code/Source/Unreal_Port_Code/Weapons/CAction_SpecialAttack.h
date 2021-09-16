@@ -32,9 +32,9 @@ public:
 	void OnAttachmentEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter) override;
 
 	UFUNCTION()
-		void OnGuardPointBeginOverlap(class AActor* DefenseTo, class AActor* InAttackCauser);
+		void OnSpecialPointBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter);
 	UFUNCTION()
-		void OnGuardPointEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter);
+		void OnSpecialPointEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter);
 
 private:
 	UFUNCTION()
@@ -59,9 +59,9 @@ private:
 	// 다단히트 방지용
 	TArray<class ACharacter*> HittedCharacters;
 	// 경직용
-	TArray<class ACharacter*> StiffedCharacters;
+	TArray<class ACharacter*> SpecialHittedCharacters;
 
-	class ACGuardPoint* GuardPoint;
+	class ACSpecialPoint* SpecialPoint;
 };
 
 /*

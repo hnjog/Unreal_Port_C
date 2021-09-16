@@ -5,7 +5,7 @@
 #include"Components/CStatusComponent.h"
 #include<Weapons/CDamageType_LastCombo.h>
 #include<Weapons/CDamageType_Counter.h>
-#include<Weapons/CGuardPoint.h>
+#include<Weapons/CSpecialPoint.h>
 #include"Interfaces/ICharacter.h"
 
 void ACAction_Melee::BeginPlay()
@@ -13,7 +13,7 @@ void ACAction_Melee::BeginPlay()
 	Super::BeginPlay();
 
 	FTransform transform;
-	GuardPoint = OwnerCharacter->GetWorld()->SpawnActorDeferred<ACGuardPoint>(ACGuardPoint::StaticClass(), transform, OwnerCharacter);
+	GuardPoint = OwnerCharacter->GetWorld()->SpawnActorDeferred<ACSpecialPoint>(ACSpecialPoint::StaticClass(), transform, OwnerCharacter);
 	GuardPoint->AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::KeepRelative, true));
 	UGameplayStatics::FinishSpawningActor(GuardPoint, transform);
 

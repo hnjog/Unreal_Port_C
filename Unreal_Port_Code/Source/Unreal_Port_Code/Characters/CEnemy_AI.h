@@ -62,6 +62,10 @@ public:
 	UPROPERTY(BlueprintAssignable)
 		FStanceTypeChanged OnStanceTypeChanged;
 
+public:
+	UFUNCTION(BlueprintImplementableEvent)
+		void RootMove() override;
+
 private:
 	EEnemyStance Stance;
 

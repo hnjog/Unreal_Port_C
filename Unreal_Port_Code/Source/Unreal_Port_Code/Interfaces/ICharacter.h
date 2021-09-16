@@ -22,6 +22,8 @@ public:
 	virtual void End_Taunt() {}
 	virtual void End_WakeUp() {}
 
+	virtual	void RootMove() {}
+
 public:
 	virtual void LaunchByHitted() {}
 	virtual void Popcorn() {}

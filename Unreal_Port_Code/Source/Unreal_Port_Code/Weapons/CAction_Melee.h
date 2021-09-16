@@ -76,7 +76,7 @@ private:
 	// °æÁ÷¿ë
 	TArray<class ACharacter*> StiffedCharacters;
 
-	class ACGuardPoint* GuardPoint;
+	class ACSpecialPoint* GuardPoint;
 
 };
 

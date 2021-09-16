@@ -2,13 +2,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "CGuardPoint.generated.h"
+#include "CSpecialPoint.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGuardPointBeginOverlap, class AActor*, DefenseTo, class AActor*, InAttackCauser);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FGuardPointEndOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSpecialBeginOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSpecialEndOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
+
 UCLASS()
-class UNREAL_PORT_CODE_API ACGuardPoint : public AActor
+class UNREAL_PORT_CODE_API ACSpecialPoint : public AActor
 {
 	GENERATED_BODY()
 
@@ -20,10 +23,13 @@ private:
 		class UCapsuleComponent* Capsule;
 
 public:
-	ACGuardPoint();
+	ACSpecialPoint();
 
 	void OnCollision();
 	void OffCollision();
+
+	void SetCapsuleSize(float height, float radius);
+	void AddCapsuleLocation(const FVector& relative);
 
 protected:
 	virtual void BeginPlay() override;
@@ -41,6 +47,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 		FGuardPointEndOverlap OnGuardPointEndOverlap;
+
+	UPROPERTY(BlueprintAssignable)
+		FSpecialBeginOverlap OnSpecialBeginOverlap;
+
+	UPROPERTY(BlueprintAssignable)
+		FSpecialEndOverlap OnSpecialEndOverlap;
 
 private:
 	class ACharacter* OwnerCharacter;

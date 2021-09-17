@@ -94,7 +94,9 @@ void ACAction_SpecialAttack::DoSpecial()
 	}
 
 	CheckFalse(State->IsIdleMode());
-	State->SetActionMode();
+	State->SetSpecialMode();
+
+	SpecialPoint->OnCollision();
 
 	OwnerCharacter->PlayAnimMontage(SpecialDatas[0].AnimMontage, SpecialDatas[0].PlayRate, SpecialDatas[0].StartSection);
 	Datas[0].bCanMove ? Status->SetMove() : Status->SetStop();

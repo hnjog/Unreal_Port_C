@@ -15,5 +15,5 @@ void UCAnimNotify_RootMove::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 
 	IICharacter* character = Cast<IICharacter>(MeshComp->GetOwner());
 	CheckNull(character);
-	character->RootMove();
+	character->RootMove(Animation->GetName());
 }

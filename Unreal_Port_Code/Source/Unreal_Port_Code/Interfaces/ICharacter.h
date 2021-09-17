@@ -22,7 +22,8 @@ public:
 	virtual void End_Taunt() {}
 	virtual void End_WakeUp() {}
 
-	virtual	void RootMove() {}
+	virtual	void RootMove(const FString& AnimName) {}
+	virtual void RootMoveEnd() {}
 
 public:
 	virtual void LaunchByHitted() {}

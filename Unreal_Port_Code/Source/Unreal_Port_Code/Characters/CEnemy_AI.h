@@ -64,7 +64,10 @@ public:
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-		void RootMove() override;
+		void RootMove(const FString& AnimName) override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+		void RootMoveEnd() override;
 
 private:
 	EEnemyStance Stance;

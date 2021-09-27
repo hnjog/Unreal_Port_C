@@ -28,6 +28,8 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 		return;
 	}
 
+	SpecialTimer += DeltaSeconds;
+
 	if (state->IsKnockOutMode())
 	{
 		behavior->SetKnockOutMode();
@@ -124,11 +126,14 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 
 	*/
 
-	if (distance < controller->GetSpecialRange())
+	if (distance < controller->GetSpecialRange() && SpecialTimer >= 10.0f)
 	{
 		behavior->SetSpecialMode();
+		SpecialTimer = 0.0f;
 		return;
 	}
+
+
 
 	// In Act Range
 	if (distance < controller->GetBehaviorRange())

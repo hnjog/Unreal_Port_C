@@ -20,6 +20,9 @@ private:
 
 	bool bTaunt = false;
 	bool bDiscover = false;
+
+	float SpecialCoolTime = 10.0f;
+	float SpecialTimer = 10.0f;
 };
 
 /*

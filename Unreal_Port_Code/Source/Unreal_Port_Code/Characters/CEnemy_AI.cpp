@@ -1,15 +1,30 @@
 #include "CEnemy_AI.h"
 #include "Global.h"
+#include<particles/ParticleSystemComponent.h>
 
 ACEnemy_AI::ACEnemy_AI()
 {
 	Stance = EEnemyStance::Idle;
 
+	CHelpers::CreateComponent(this, &ParticleSystem, "ParticleSystem", GetMesh());
+
+	//UParticleSystem* particle;
+	//CHelpers::GetAsset<UParticleSystem>(&particle, "ParticleSystem'/Game/Particles/Test/P_SmiteEffect.P_SmiteEffect'");
+	//ParticleSystem->Template = particle;
+
+	ParticleSystem->SetWorldScale3D(ParticleSize);
+	ParticleSystem->SetupAttachment(GetMesh());
+	ParticleSystem->bAutoActivate = false;
 }
 
 void ACEnemy_AI::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!!SpecialParticle)
+	{
+		ParticleSystem->SetTemplate(SpecialParticle);
+	}
 
 }
 
@@ -19,6 +34,17 @@ void ACEnemy_AI::End_Dead()
 		OnStanceTypeChanged.Clear();
 
 	Super::End_Dead();
+}
+
+void ACEnemy_AI::Idle()
+{
+	Super::Idle();
+}
+
+void ACEnemy_AI::Special()
+{
+	Super::Special();
+	ParticleSystem->ToggleActive();
 }
 
 // 어쩌면 이거 자체를 하나의 컴포넌트로 만드는 것이 좋았을지도 모르곘지만
@@ -49,8 +75,9 @@ void ACEnemy_AI::ChangeStanceType(EEnemyStance InNewType)
 
 	if (OnStanceTypeChanged.IsBound())
 		OnStanceTypeChanged.Broadcast(prev, InNewType);
-
 }
+
+
 
 /*
 	USkeletalMesh* mesh;

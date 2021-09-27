@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/TimelineComponent.h"
 #include "Components/CStateComponent.h"
 #include "Interfaces/ICharacter.h"
 #include "CEnemy_Base.generated.h"
@@ -25,6 +26,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 		float LerpSpeed = 5.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+		float SpecialIntensity = 5.0f;
 
 private:
 	// wizet 만들면 여기에
@@ -65,6 +69,10 @@ private:
 		void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 protected:
+	// For Material Param
+	virtual void Idle();
+	virtual void Special();
+
 	virtual void Hitted();
 	virtual void End_Hit() override;
 
@@ -94,6 +102,12 @@ private:
 
 private:
 	class AController* DamageInstigator;
+
+protected:
+	class UMaterialInstanceDynamic* BodyMaterial;
+
+	FTimeline SpecialTimeline;
+	class UCurveFloat* Curve;
 
 protected:
 	bool bDamagedLastAttack;

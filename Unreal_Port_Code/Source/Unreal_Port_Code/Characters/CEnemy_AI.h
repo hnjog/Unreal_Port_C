@@ -24,6 +24,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 		uint8 TeamID = 1;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Particle")
+		FVector ParticleSize = FVector(0.3f,0.3f,0.3f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Particle")
+		UParticleSystem* SpecialParticle;
+
+private:
+	UPROPERTY(VisibleDefaultsOnly, Category = "Particle")
+		class UParticleSystemComponent* ParticleSystem;
 
 public:
 	FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
@@ -57,6 +66,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void End_Dead() override;
+
+	virtual void Idle() override;
+	virtual void Special() override;
 
 public:
 	UPROPERTY(BlueprintAssignable)

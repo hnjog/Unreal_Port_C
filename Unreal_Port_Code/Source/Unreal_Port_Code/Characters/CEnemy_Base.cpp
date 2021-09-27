@@ -8,6 +8,11 @@
 #include "Components/CMontagesComponent.h"
 #include<Weapons/CDamageType_LastCombo.h>
 #include<Weapons/CDamageType_Counter.h>
+#include "Materials/MaterialInstanceConstant.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Curves/CurveFloat.h"
+#include<Materials/MaterialParameterCollection.h>
+#include<Kismet/KismetMaterialLibrary.h>
 
 ACEnemy_Base::ACEnemy_Base()
 	:bDamagedLastAttack(false), WakeUpTimer(0.0f)
@@ -20,6 +25,7 @@ ACEnemy_Base::ACEnemy_Base()
 	CHelpers::CreateActorComponent(this, &State, "State");
 	CHelpers::CreateActorComponent(this, &Action, "Action");
 
+	CHelpers::GetAsset<UCurveFloat>(&Curve, "CurveFloat'/Game/Enemy/BaseAI/Curve_Special.Curve_Special'");
 }
 
 void ACEnemy_Base::BeginPlay()
@@ -29,6 +35,11 @@ void ACEnemy_Base::BeginPlay()
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACEnemy_Base::OnComponentHit);
 
 	GetCharacterMovement()->MaxWalkSpeed = Status->GetRunSpeed();
+
+	UMaterialInstanceConstant* body;
+	CHelpers::GetAssetDynamic<UMaterialInstanceConstant>(&body, "MaterialInstanceConstant'/Game/Enemy/SlimeNTurtles/Materials/MI_Slime.MI_Slime'");
+	BodyMaterial = UMaterialInstanceDynamic::Create(body, this);
+	GetMesh()->SetMaterial(0, BodyMaterial);
 
 	Super::BeginPlay();
 }
@@ -47,18 +58,12 @@ void ACEnemy_Base::Tick(float DeltaTime)
 
 		CheckTrue(GetCharacterMovement()->IsFalling());
 
-		//CLog::Print("IS falling", 2);
-		//CLog::Print(GetVelocity(), 3);
-		//CLog::Print(GetVelocity().Size(), 4);
-
-		// Hit Animation이 재생되어 , Idle로 돌아와서 Wakeup이 안되는 것은...??
 		WakeUpTimer += DeltaTime;
 
 		//CLog::Print(WakeUpTimer, 5);
 
 		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true)
 		{
-			//CLog::Print("WakeUp_Start", 6);
 			State->SetWakeUpMode();
 			WakeUpTimer = 0.0f;
 			return;
@@ -115,6 +120,8 @@ void ACEnemy_Base::OnStateTypeChanged(EStateType InPrevType, EStateType InNewTyp
 {
 	switch (InNewType)
 	{
+	case EStateType::Idle: Idle();	break;
+	case EStateType::Special: Special();	break;
 	case EStateType::Hitted: Hitted();	break;
 	case EStateType::Dead: Dead();	break;
 	case EStateType::Taunt: Taunt();	break;
@@ -131,6 +138,16 @@ void ACEnemy_Base::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* Oth
 		HittedResult = Hit;
 		LaunchByHitted();
 	}
+}
+
+void ACEnemy_Base::Idle()
+{
+	BodyMaterial->SetScalarParameterValue("Intensity", 0.0f);
+}
+
+void ACEnemy_Base::Special()
+{
+	BodyMaterial->SetScalarParameterValue("Intensity", SpecialIntensity);
 }
 
 void ACEnemy_Base::Hitted()

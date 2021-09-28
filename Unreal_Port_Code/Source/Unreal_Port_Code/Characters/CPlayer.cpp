@@ -13,8 +13,10 @@
 #include"Items/CItemFiled.h"
 #include "Items/CEquip_Arrow.h"
 #include "Items/CItem_Arrow.h"
+#include<Weapons/CDamageType_SpecialAttack.h>
 
 ACPlayer::ACPlayer()
+	:bDamagedLastAttack(false), WakeUpTimer(0.0f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -76,25 +78,44 @@ void ACPlayer::Tick(float DeltaTime)
 	TArray<FHitResult> hitResults;
 
 	bool result = UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), start, end, 60.0f, 96.0f, ETraceTypeQuery::TraceTypeQuery1, false, actors, EDrawDebugTrace::None, hitResults, true);
-	CheckFalse(result);
-
-	for (auto hit : hitResults)
+	if (result == true)
 	{
-		filedItem = Cast<ACItemFiled>(hit.GetActor());
-
-		if (filedItem != nullptr)
+		for (auto hit : hitResults)
 		{
-			ACItem_Arrow* arrow = Cast<ACItem_Arrow>(filedItem);
-			if (!!arrow)
+			filedItem = Cast<ACItemFiled>(hit.GetActor());
+
+			if (filedItem != nullptr)
 			{
-				if (arrow->GetStucked() == false)
+				ACItem_Arrow* arrow = Cast<ACItem_Arrow>(filedItem);
+				if (!!arrow)
 				{
-					continue;
+					if (arrow->GetStucked() == false)
+					{
+						continue;
+					}
 				}
+				filedItem->OnVisible();
 			}
-			filedItem->OnVisible();
+		}
+
+	}
+
+	if (State->IsKnockOutMode() == true) //  && GetCharacterMovement()->IsFalling() == false
+	{
+		Popcorn();
+
+		CheckTrue(GetCharacterMovement()->IsFalling());
+
+		WakeUpTimer += DeltaTime;
+
+		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true)
+		{
+			State->SetWakeUpMode();
+			WakeUpTimer = 0.0f;
+			return;
 		}
 	}
+
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -323,8 +344,8 @@ float ACPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AContr
 	float damage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	DamageInstigator = EventInstigator;
 
-	CLog::Print(bParrying ? "Parrying" : "Not Parrying");
-	CLog::Print(bGuard ? "Guard" : "Not Guard");
+	//CLog::Print(bParrying ? "Parrying" : "Not Parrying");
+	//CLog::Print(bGuard ? "Guard" : "Not Guard");
 
 	// 여기에 패링 상태일때 TakeDamage를 리턴시키는 부분 필요
 	if (bParrying == true)
@@ -343,6 +364,12 @@ float ACPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AContr
 	Action->AbortByDamage();
 
 	// 여기는 다운 상태
+	if (DamageEvent.DamageTypeClass == UCDamageType_SpecialAttack::StaticClass())
+	{
+		State->SetKnockOutMode();
+		bDamagedLastAttack = true;
+		return Status->GetHealth();
+	}
 
 	// 여기는 경직 상태
 
@@ -398,7 +425,7 @@ void ACPlayer::End_Stiff()
 
 void ACPlayer::WakeUp()
 {
-
+	Montages->PlayWakeUp();
 }
 
 void ACPlayer::End_WakeUp()
@@ -416,6 +443,41 @@ void ACPlayer::Guard(bool result)
 	bGuard = result;
 }
 
+void ACPlayer::LaunchByHitted()
+{
+	CheckFalse(bDamagedLastAttack);
+	bDamagedLastAttack = false;
+
+	CLog::Print("In Launch");
+
+	FVector up = FVector::UpVector;
+
+	FVector Direction = HittedResult.ImpactNormal * LauchValue + up * LauchUpValue;
+
+	LaunchCharacter(Direction, false, true);
+}
+
+void ACPlayer::Popcorn()
+{
+	StopAnimMontage();
+
+	GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+
+	GetMesh()->SetSimulatePhysics(true);
+}
+
+void ACPlayer::End_Popcorn()
+{
+	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->SetWorldLocation(GetActorLocation());
+
+	GetMesh()->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepWorldTransform);
+	GetMesh()->SetWorldTransform(GetActorTransform());
+
+	GetMesh()->AddRelativeLocation(FVector(0, 0, -88));
+	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
+}
+
 void ACPlayer::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)
 {
 	switch (InNewType)
@@ -424,5 +486,22 @@ void ACPlayer::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)
 	case EStateType::Dead: Dead(); break;
 	case EStateType::Stiff: Stiff(); break;
 	case EStateType::WakeUp: WakeUp(); break;
+	}
+}
+
+void ACPlayer::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	// 이거 Hit에 안들어 와서 Launch가 작동하지 못함
+	// 이 경우에는 Special point 등에서 전달해야 한들
+	// Damage Type의 Normal 을 담는다던가
+	// 애초에 overlap 이기에 Hit가 담기지 않는데??
+	// 방식 1 -> Special의 해당 부분에 GenerateHit를 넣어 여기로 들어오는 방식은?
+	// -> 아예 안들어옴
+	CLog::Print(Hit.Normal);
+
+	if (State->IsKnockOutMode() == true)
+	{
+		HittedResult = Hit;
+		LaunchByHitted();
 	}
 }

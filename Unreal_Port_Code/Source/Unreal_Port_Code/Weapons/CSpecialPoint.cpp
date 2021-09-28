@@ -46,6 +46,7 @@ void ACSpecialPoint::OnComponentEndOverlap(UPrimitiveComponent* OverlappedCompon
 		OnSpecialEndOverlap.Broadcast(OwnerCharacter, this, Cast<ACharacter>(OtherActor));
 }
 
+
 void ACSpecialPoint::OnCollision()
 {
 	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -65,4 +66,9 @@ void ACSpecialPoint::SetCapsuleSize(float height, float radius)
 void ACSpecialPoint::AddCapsuleLocation(const FVector& relative)
 {
 	Capsule->AddRelativeLocation(relative);
+}
+
+void ACSpecialPoint::SetGenHit()
+{
+	Capsule->SetNotifyRigidBodyCollision(true);
 }

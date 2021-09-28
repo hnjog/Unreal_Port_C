@@ -31,6 +31,8 @@ public:
 	void SetCapsuleSize(float height, float radius);
 	void AddCapsuleLocation(const FVector& relative);
 
+	void SetGenHit();
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -28,7 +28,9 @@ EBTNodeResult::Type UCBTTaskNode_Special::ExecuteTask(UBehaviorTreeComponent& Ow
 
 	CheckNullResult(behavior->GetTargetPlayer(), EBTNodeResult::Failed);
 	//controller->SetFocus(behavior->GetTargetPlayer());
+	
 	controller->StopMovement();
+	controller->ClearFocus(EAIFocusPriority::Gameplay);
 
 	RunningTime = 0.0f;
 	action->DoSpecial();

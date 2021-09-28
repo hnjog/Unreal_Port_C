@@ -93,7 +93,6 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 			return;
 		}
 
-		//if (behavior->IsDoubtMode() == true && state->IsDiscoverMode() == false)
 		if (bDiscover == false && behavior->IsDiscoverMode() == false)
 		{
 			behavior->SetDiscoverMode();
@@ -101,7 +100,6 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 			bDiscover = true;
 			return;
 		}
-
 	}
 
 	float distance = aiPawn->GetDistanceTo(target);
@@ -109,22 +107,7 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 	aiPawn->SetBattleStance();
 
 	// 전투 상태
-
-	/*
-		Special 의 조건
-
-		슬라임
-		: 튀어오른뒤 대상 지점으로 찍는 방식
-
-		처음 우선 순위
-		쿨타임??
-
-		스페셜 우선 검사
-		-> 이후 쿨타임이 도는 중이라면,
-		액션 사용
-
-
-	*/
+	CheckFalse(state->IsIdleMode());
 
 	if (distance < controller->GetSpecialRange() && SpecialTimer >= 10.0f)
 	{
@@ -132,8 +115,6 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 		SpecialTimer = 0.0f;
 		return;
 	}
-
-
 
 	// In Act Range
 	if (distance < controller->GetBehaviorRange())

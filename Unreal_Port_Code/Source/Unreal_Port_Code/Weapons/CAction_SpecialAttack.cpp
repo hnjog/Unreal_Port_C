@@ -4,7 +4,7 @@
 #include"Components/CStateComponent.h"
 #include"Components/CStatusComponent.h"
 #include<Weapons/CDamageType_LastCombo.h>
-#include<Weapons/CDamageType_Counter.h>
+#include<Weapons/CDamageType_SpecialAttack.h>
 #include<Weapons/CSpecialPoint.h>
 #include"Interfaces/ICharacter.h"
 
@@ -20,6 +20,7 @@ void ACAction_SpecialAttack::BeginPlay()
 
 	SpecialPoint->OnSpecialBeginOverlap.AddDynamic(this, &ACAction_SpecialAttack::OnSpecialPointBeginOverlap);
 	SpecialPoint->OnSpecialEndOverlap.AddDynamic(this, &ACAction_SpecialAttack::OnSpecialPointEndOverlap);
+	SpecialPoint->SetGenHit();
 }
 
 void ACAction_SpecialAttack::Tick(float DeltaTime)
@@ -82,9 +83,10 @@ void ACAction_SpecialAttack::End_DoAction()
 void ACAction_SpecialAttack::DoSpecial()
 {
 	Super::DoSpecial();
-	CLog::Print("Special IN",0);
 	CheckFalse(Datas.Num() > 0);
-	CLog::Print("Data In",1);
+
+	CheckFalse(State->IsIdleMode());
+	State->SetSpecialMode();
 
 	if (bEnableSpecial == true)
 	{
@@ -93,10 +95,10 @@ void ACAction_SpecialAttack::DoSpecial()
 		return;
 	}
 
-	CheckFalse(State->IsIdleMode());
-	State->SetSpecialMode();
-
 	SpecialPoint->OnCollision();
+
+	//state가 Discover 이기에?
+	CLog::Print("Data In", 1);
 
 	OwnerCharacter->PlayAnimMontage(SpecialDatas[0].AnimMontage, SpecialDatas[0].PlayRate, SpecialDatas[0].StartSection);
 	Datas[0].bCanMove ? Status->SetMove() : Status->SetStop();
@@ -197,7 +199,6 @@ void ACAction_SpecialAttack::OnAttachmentEndOverlap(ACharacter* InAttacker, AAct
 {
 	Super::OnAttachmentEndOverlap(InAttacker, InAttackCauser, InOtherCharacter);
 
-
 }
 
 void ACAction_SpecialAttack::OnSpecialPointBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter)
@@ -237,7 +238,7 @@ void ACAction_SpecialAttack::OnSpecialPointBeginOverlap(class ACharacter* InAtta
 
 	if (IndexSpecial == SpecialDatas.Num() - 1)
 	{
-		e.DamageTypeClass = UCDamageType_LastCombo::StaticClass();
+		e.DamageTypeClass = UCDamageType_SpecialAttack::StaticClass();
 	}
 
 	if (FMath::IsNearlyZero(EquipValue) == true) EquipValue = 1.0f;

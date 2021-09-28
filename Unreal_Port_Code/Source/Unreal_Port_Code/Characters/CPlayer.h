@@ -19,6 +19,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Team")
 		uint8 TeamID = 0;
 
+	UPROPERTY(EditDefaultsOnly)
+		float LauchValue = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+		float LauchUpValue = 30.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+		float WakeUpTime = 1.0f;
 private:
 	//Scene Components
 	UPROPERTY(VisibleDefaultsOnly)
@@ -108,9 +116,17 @@ private:
 	virtual void Parrying(bool result) override;
 	virtual void Guard(bool result) override;
 
+protected:
+	virtual void LaunchByHitted() override;
+	virtual void Popcorn() override;
+	virtual void End_Popcorn() override;
+
 private:
 	UFUNCTION()
 		void OnStateTypeChanged(EStateType InPrevType, EStateType InNewType);
+
+	UFUNCTION()
+		void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 private:
 	float HorizontalRate = 45.0f;
@@ -134,6 +150,11 @@ private:
 protected:
 	bool bParrying;
 	bool bGuard;
+
+	bool bDamagedLastAttack;
+	FHitResult HittedResult;
+
+	float WakeUpTimer;
 };
 
 /*

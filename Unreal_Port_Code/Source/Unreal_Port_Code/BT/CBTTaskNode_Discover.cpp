@@ -24,6 +24,7 @@ EBTNodeResult::Type UCBTTaskNode_Discover::ExecuteTask(UBehaviorTreeComponent& O
 	UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(aiPawn);
 	UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
 
+	CheckTrueResult(state->IsDiscoverMode(), EBTNodeResult::InProgress);
 	CheckNullResult(behavior->GetTargetPlayer(), EBTNodeResult::Failed);
 	controller->SetFocus(behavior->GetTargetPlayer());
 	controller->StopMovement();

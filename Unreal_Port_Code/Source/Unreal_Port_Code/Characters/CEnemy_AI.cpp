@@ -8,10 +8,6 @@ ACEnemy_AI::ACEnemy_AI()
 
 	CHelpers::CreateComponent(this, &ParticleSystem, "ParticleSystem", GetMesh());
 
-	//UParticleSystem* particle;
-	//CHelpers::GetAsset<UParticleSystem>(&particle, "ParticleSystem'/Game/Particles/Test/P_SmiteEffect.P_SmiteEffect'");
-	//ParticleSystem->Template = particle;
-
 	ParticleSystem->SetWorldScale3D(ParticleSize);
 	ParticleSystem->SetupAttachment(GetMesh());
 	ParticleSystem->bAutoActivate = false;

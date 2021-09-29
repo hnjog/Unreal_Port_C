@@ -64,7 +64,7 @@ void ACPlayer::BeginPlay()
 	Super::BeginPlay();
 
 	State->OnStateTypeChanged.AddDynamic(this, &ACPlayer::OnStateTypeChanged);
-
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACPlayer::OnComponentHit);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -97,7 +97,6 @@ void ACPlayer::Tick(float DeltaTime)
 				filedItem->OnVisible();
 			}
 		}
-
 	}
 
 	if (State->IsKnockOutMode() == true) //  && GetCharacterMovement()->IsFalling() == false
@@ -108,7 +107,9 @@ void ACPlayer::Tick(float DeltaTime)
 
 		WakeUpTimer += DeltaTime;
 
-		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true)
+		CLog::Print(WakeUpTimer, 5);
+
+		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true) //
 		{
 			State->SetWakeUpMode();
 			WakeUpTimer = 0.0f;
@@ -425,11 +426,14 @@ void ACPlayer::End_Stiff()
 
 void ACPlayer::WakeUp()
 {
+	CLog::Print("In WakeUp");
+	End_Popcorn();
 	Montages->PlayWakeUp();
 }
 
 void ACPlayer::End_WakeUp()
 {
+
 	State->SetIdleMode();
 }
 
@@ -448,20 +452,23 @@ void ACPlayer::LaunchByHitted()
 	CheckFalse(bDamagedLastAttack);
 	bDamagedLastAttack = false;
 
-	CLog::Print("In Launch");
-
 	FVector up = FVector::UpVector;
 
 	FVector Direction = HittedResult.ImpactNormal * LauchValue + up * LauchUpValue;
 
-	LaunchCharacter(Direction, false, true);
+	
+	LaunchCharacter(Direction, true, false);
 }
 
 void ACPlayer::Popcorn()
 {
 	StopAnimMontage();
 
+	//CLog::Print("In Popcorn");
+
 	GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+	//FRotator rotation = UKismetMathLibrary::FindLookAtRotation(HittedResult.ImpactNormal, GetActorLocation());
+	GetMesh()->AddWorldRotation(FRotator(0, 0, -2.0f), false, nullptr, ETeleportType::TeleportPhysics);
 
 	GetMesh()->SetSimulatePhysics(true);
 }
@@ -491,13 +498,7 @@ void ACPlayer::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)
 
 void ACPlayer::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// 이거 Hit에 안들어 와서 Launch가 작동하지 못함
-	// 이 경우에는 Special point 등에서 전달해야 한들
-	// Damage Type의 Normal 을 담는다던가
-	// 애초에 overlap 이기에 Hit가 담기지 않는데??
-	// 방식 1 -> Special의 해당 부분에 GenerateHit를 넣어 여기로 들어오는 방식은?
-	// -> 아예 안들어옴
-	CLog::Print(Hit.Normal);
+	//CLog::Print(Hit.Normal);
 
 	if (State->IsKnockOutMode() == true)
 	{

@@ -21,7 +21,7 @@ void UCAim::BeginPlay(ACharacter* InCharacter)
 
 	TimelineFloat.BindUFunction(this, "Zooming");
 	Timeline.AddInterpFloat(Curve, TimelineFloat);
-	Timeline.SetPlayRate(200);
+	Timeline.SetPlayRate(10);
 
 	//UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD<ACHUD>();
 	Hud = OwnerCharacter->GetWorld()->GetFirstPlayerController()->GetHUD<ACBaseHUD>();
@@ -38,13 +38,12 @@ void UCAim::On()
 	CheckTrue(bInZoom);
 	bInZoom = true;
 
-	Hud->EnableDraw();
+	//Hud->EnableDraw();
 
 	SpringArm->TargetArmLength = 100.0f;
 	SpringArm->SocketOffset = FVector(0, 30, 10);
 	SpringArm->bEnableCameraLag = false;
 
-	//Camera->FieldOfView = 45;
 	Timeline.PlayFromStart();
 }
 
@@ -54,17 +53,17 @@ void UCAim::Off()
 	CheckFalse(bInZoom);
 	bInZoom = false;
 
-	Hud->DisableDraw();
+	//Hud->DisableDraw();
 
 	SpringArm->TargetArmLength = 200.0f;
 	SpringArm->SocketOffset = FVector(0, 0, 0);
 	SpringArm->bEnableCameraLag = true;
 
-	//Camera->FieldOfView = 90;
 	Timeline.ReverseFromEnd();
 }
 
 void UCAim::Zooming(float Output)
 {
+	CLog::Print(Camera->FieldOfView,5);
 	Camera->FieldOfView = Output;
 }

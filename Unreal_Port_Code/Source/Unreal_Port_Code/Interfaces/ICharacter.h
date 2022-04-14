@@ -21,9 +21,12 @@ public:
 	virtual void End_Discover() {}
 	virtual void End_Taunt() {}
 	virtual void End_WakeUp() {}
+	virtual void End_Dodge() {}
 
 	virtual	void RootMove(const FString& AnimName) {}
 	virtual void RootMoveEnd() {}
+
+	virtual void CreateGhostTrail() {}
 
 public:
 	virtual void LaunchByHitted() {}

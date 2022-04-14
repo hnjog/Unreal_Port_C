@@ -32,7 +32,7 @@ bool UCInventoryComponent::AddItem(UCItem* Item)
 	{
 		for (auto& item : Items)
 		{
-			if (Item->Index == item->Index) //  && item->Count >= 1
+			if (Item->Index == item->Index)
 			{
 				item->Count++;
 				OnInventoryUpdated.Broadcast();
@@ -46,10 +46,7 @@ bool UCInventoryComponent::AddItem(UCItem* Item)
 	Item->World = GetWorld();
 	Item->BeginPlay();
 	Items.Emplace(Item);
-	// vector 처럼 emplace 아주 약간 더 좋음 (성능)
-	// add 가 가독성은 더 좋을수 있음
-
-	//Update UI
+	
 	OnInventoryUpdated.Broadcast();
 
 	return true;
@@ -116,7 +113,3 @@ void UCInventoryComponent::SortInven()
 		return A.Index < B.Index;
 	});
 }
-
-/*
-	tick component는 성능상 별로라는 말이 있음
-*/

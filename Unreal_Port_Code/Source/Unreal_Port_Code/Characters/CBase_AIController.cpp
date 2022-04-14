@@ -57,21 +57,15 @@ void ACBase_AIController::OnPossess(APawn* InPawn)
 
 	UseBlackboard(OwnerEnemy->GetBehaviorTree()->BlackboardAsset, Blackboard);
 
-
-	// teamid : 255 - 중립, 나머지는 각기 관계를 가짐(아이디가 같으면 같은 팀)
-	// 빙의가 먼저 되므로 여따 놓음
 	SetGenericTeamId(OwnerEnemy->GetTeamID());
 
-	// 감지가 되었을때 사용되는 델리게이트
 	Perception->OnPerceptionUpdated.AddDynamic(this, &ACBase_AIController::OnPerceptionUpdated);
 
 	Behavior->SetBlackBoard(Blackboard);
 
 	OwnerEnemy->OnStanceTypeChanged.AddDynamic(this, &ACBase_AIController::OnStanceChanged);
 
-	// 행동트리 돌리는 함수
 	RunBehaviorTree(OwnerEnemy->GetBehaviorTree());
-	
 }
 
 void ACBase_AIController::OnUnPossess()
@@ -92,8 +86,6 @@ void ACBase_AIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActo
 		player = Cast<ACPlayer>(actor);
 		if (!!player)
 		{
-			//CLog::Log(player);
-			//CLog::Print("Find Player",2);
 			break;
 		}
 	}
@@ -111,6 +103,5 @@ float ACBase_AIController::GetSightMaxAge()
 void ACBase_AIController::OnStanceChanged(EEnemyStance InPrevStance, EEnemyStance InNewStance)
 {
 	StanceType = InNewStance;
-	//CLog::Print((int32)StanceType, 1);
 	Blackboard->SetValueAsEnum("Stance", (int32)StanceType);
 }

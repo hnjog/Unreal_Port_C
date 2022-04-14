@@ -162,8 +162,9 @@ void ACAction_SpecialAttack::OnAttachmentBeginOverlap(ACharacter* InAttacker, AA
 
 	if (FMath::IsNearlyZero(hitStop) == false) 
 	{
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
-		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * 2e-2f, false);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate);
+		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * HitStopRate, false);
 	}
 
 	UParticleSystem* hitEffect = Datas[IndexAttack].Effect;
@@ -203,6 +204,9 @@ void ACAction_SpecialAttack::OnAttachmentEndOverlap(ACharacter* InAttacker, AAct
 
 void ACAction_SpecialAttack::OnSpecialPointBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter)
 {
+	//IsA<ACharacter>()
+	CheckNull(InOtherCharacter);
+
 	for (const ACharacter* other : SpecialHittedCharacters)
 	{
 		if (InOtherCharacter == other)
@@ -214,8 +218,9 @@ void ACAction_SpecialAttack::OnSpecialPointBeginOverlap(class ACharacter* InAtta
 
 	if (FMath::IsNearlyZero(hitStop) == false)
 	{
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
-		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * 2e-2f, false);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate);
+		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * HitStopRate, false);
 	}
 
 	UParticleSystem* hitEffect = SpecialDatas[IndexSpecial].Effect;
@@ -242,7 +247,7 @@ void ACAction_SpecialAttack::OnSpecialPointBeginOverlap(class ACharacter* InAtta
 	}
 
 	if (FMath::IsNearlyZero(EquipValue) == true) EquipValue = 1.0f;
-
+	
 	InOtherCharacter->TakeDamage(SpecialDatas[IndexSpecial].PowerRate * EquipValue, e, InAttacker->GetController(), InAttackCauser);
 }
 
@@ -253,5 +258,6 @@ void ACAction_SpecialAttack::OnSpecialPointEndOverlap(ACharacter* InAttacker, AA
 
 void ACAction_SpecialAttack::ResetGlobalDilation()
 {
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate,true);
 }

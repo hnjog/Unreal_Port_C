@@ -11,7 +11,7 @@
 #include "CPlayer.generated.h"
 
 UCLASS()
-class UNREAL_PORT_CODE_API ACPlayer : public ACharacter , public IIAbleInventory, public IICharacter, public IGenericTeamAgentInterface
+class UNREAL_PORT_CODE_API ACPlayer : public ACharacter, public IIAbleInventory, public IICharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -27,6 +27,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 		float WakeUpTime = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+		float FocusRecoveryRate = 0.1f;
 private:
 	//Scene Components
 	UPROPERTY(VisibleDefaultsOnly)
@@ -35,10 +38,10 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCameraComponent* Camera;
 
-	//Actor Components
 	UPROPERTY(VisibleDefaultsOnly)
-		class UCStateComponent* State;
+		class UPostProcessComponent* PostProcess;
 
+	//Actor Components
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCStatusComponent* Status;
 
@@ -50,6 +53,13 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCInventoryComponent* Inventory;
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+		class UCStateComponent* State;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+		class UCAblityComponent* Ability;
 
 public:
 	ACPlayer();
@@ -67,19 +77,26 @@ public:
 	UFUNCTION()
 		void SetEquipItem(class UCEquipItem* EquipItem, bool result) override;
 
-	// 이거 필요 없지않나? -> 화살 보이게 하는 노티파이에서 호출하는 용도로 냅둘수 있음
-	// 요거 노티파이 클래스 만든뒤, 얻어올 필요가 있긴 함 (IIAbleInventory 에 이걸 넣을까 생각중)
 	FORCEINLINE class UCEquip_Arrow* GetEquipArrow() { return SelectedArrow; }
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void InInventroy();
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void DoRush();
+
+	UFUNCTION(BlueprintCallable)
+		void End_Rush();
+
+	UFUNCTION()
+		void End_AirCombo();
 private:
 	void OnMoveForward(float InAxis);
 	void OnMoveRight(float InAxis);
 	void OnHorizontalLook(float InAxis);
 	void OnVerticalLook(float InAxis);
+	void OnCharge(float InAxis);
 
 private:
 	void OnSprint();
@@ -92,8 +109,19 @@ private:
 	void OnSpecial();
 	void OffSpecial();
 
+	void OnDodge();
+	void End_Dodge() override;
+
 	void OnPickUp();
 	void OnInventory();
+
+	void OnFocus();
+
+	void OnTarget();
+
+	void OnRush();
+
+	void CreateGhostTrail() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Items")
 		void OnUseItem(class UCItem* item) override;
@@ -107,6 +135,10 @@ private:
 	void Dead();
 	void End_Dead() override;
 
+	// if bDamage false - Healing
+	void DamageUpdate(float amount, bool bDamage = true);
+	void FocusUpdate(float amount, bool bSub = true);
+
 	virtual void Stiff();
 	virtual void End_Stiff() override;
 
@@ -115,6 +147,16 @@ private:
 
 	virtual void Parrying(bool result) override;
 	virtual void Guard(bool result) override;
+
+	void TimeFreeze();
+	UFUNCTION()
+		void TimeFreezeEnd();
+
+	UFUNCTION()
+		void DodgeSuccess();
+
+	void AirComboState(bool val);
+
 
 protected:
 	virtual void LaunchByHitted() override;
@@ -142,10 +184,27 @@ private:
 	UPROPERTY(VisibleAnywhere)
 		UCEquipItem* BowWeapon;
 
-	// 얘는 여기서 설정해주는게 나은 편일까?
-	// 활 무기를 적이 쓸걸 생각? -> 적은 그냥 화살 생성해서 쏘면 되지 않나
 	UPROPERTY(VisibleAnywhere)
 		class UCEquip_Arrow* SelectedArrow;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "widgets")
+		TSubclassOf<class UCUserWidget_HealthBar> HealthWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly)
+		class UCUserWidget_HealthBar* HealthWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "widgets")
+		TSubclassOf<class UCUserWidget_FocusUI> FocusWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly)
+		class UCUserWidget_FocusUI* FocusWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "widgets")
+		TSubclassOf<class UCUserWidget_Aim> AimWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly)
+		class UCUserWidget_Aim* AimWidget;
 
 protected:
 	bool bParrying;
@@ -155,32 +214,12 @@ protected:
 	FHitResult HittedResult;
 
 	float WakeUpTimer;
+
+	class UMaterialInstanceDynamic* PostMat;
+
+	float deltatime;
+
+	float airTimer = 0.0f;
+
+	bool waitAir = false;
 };
-
-/*
-	플레이어 가드에 대하여
-	정확히는 Action 쪽의 Special
-
-	상태에 stiff 라 하는 
-	경직 혹은 기절 상태를 추가한 뒤,
-	패링에 성공하면,
-	해당 상태로 가도록,
-	(attachment 를 off collision 해야 하고,
-	몽타주 재생 정도 일까,
-	bst 에서의 우선 순위는 dead -> Hitted -> stiff 정도로)
-
-
-	GetOwner를 통해 Capsule의 크기 등을 얻어온 뒤,
-
-	1. 대상의 state가 action 상태인지
-	2. attachment를 찾았는지 등을 고려함
-
-	퍼펙트 가드??
-
-	우클릭을 누른 순간의 시간의 정도를 구하고,
-	약 0.3~0.5 초 내에 대상의 공격이 닿으면 이라 판정하는 것은?
-
-
-
-
-*/

@@ -9,9 +9,10 @@ enum class EStateType : uint8
 {
 	Idle, Dodge, Climing, Equip, Action, Special, Hitted, Dead, Taunt,
 	//For Battle,
-	Stiff,KnockOut,WakeUp, //Down, Airborne,
+	Stiff, KnockOut, WakeUp,
+	Rush,AirComboWait, AirCombo,
 	//For AI
-	Discover ,Max
+	Discover, Max
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStateTypeChanged, EStateType, InPrevType, EStateType, InNewType);
@@ -65,10 +66,20 @@ public:
 		FORCEINLINE bool IsWakeUpMode() { return Type == EStateType::WakeUp; }
 
 	UFUNCTION(BlueprintPure)
+		FORCEINLINE bool IsRushMode() { return Type == EStateType::Rush; }
+
+	UFUNCTION(BlueprintPure)
+		FORCEINLINE bool IsAirComboWaitMode() { return Type == EStateType::AirComboWait; }
+
+	UFUNCTION(BlueprintPure)
+		FORCEINLINE bool IsAirComboMode() { return Type == EStateType::AirCombo; }
+
+	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool IsDiscoverMode() { return Type == EStateType::Discover; }
 
 public:
-	void SetIdleMode();
+	UFUNCTION(BlueprintCallable)
+		void SetIdleMode();
 	void SetDodgeMode();
 	void SetClimingMode();
 	void SetEquipMode();
@@ -80,6 +91,12 @@ public:
 	void SetStiffMode();
 	void SetKnockOutMode();
 	void SetWakeUpMode();
+	UFUNCTION(BlueprintCallable)
+		void SetRushMode();
+
+	void SetAirComboWaitMode();
+	UFUNCTION(BlueprintCallable)
+		void SetAirComboMode();
 	void SetDiscoverMode();
 
 private:

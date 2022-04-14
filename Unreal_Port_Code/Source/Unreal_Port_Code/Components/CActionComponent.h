@@ -28,8 +28,6 @@ private:
 public:
 	FORCEINLINE class UCWeapon* GetCurrentData() { return Datas[(int32)Type]; }
 
-	// weapon
-
 public:
 	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool IsUnarmedMode() { return Type == EActionType::Unarmed; }
@@ -71,6 +69,9 @@ public:
 
 	void DoSpecial();
 	void CancelSpecial();
+
+	void AddCharge(float value);
+	void ReleaseSpecial();
 
 	void Dead();
 	void End_Dead();

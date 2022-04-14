@@ -77,23 +77,6 @@ void UCActionComponent::OnChangeItem(UCEquipItem* NewItem, bool result)
 	EActionType type = EActionType::Unarmed;
 	ACAttachment* attach = nullptr;
 
-	if (NewItem->EquipType == EEquipType::Arrow)
-	{
-		ACAction_Bow* bowAction = Cast<ACAction_Bow>(Datas[(int32)EActionType::Bow]->GetAction());
-		UCEquip_Arrow* newItem = Cast< UCEquip_Arrow>(NewItem);
-		if (result == true)
-		{
-			if (!!bowAction && !!newItem)
-			{
-				bowAction->SetArrowItem(newItem);
-			}
-		}
-		else
-		{
-			bowAction->SetArrowItem(nullptr);
-		}
-		return;
-	}
 
 	if (NewItem->EquipType == EEquipType::MainWeapon)
 	{
@@ -123,20 +106,12 @@ void UCActionComponent::OnChangeItem(UCEquipItem* NewItem, bool result)
 	{
 		attach = NewItem->GetAttachment();
 
-		//if (Type != type)
-		//{
-		//	SetUnarmedMode();		// Weapon Changes, Set Unarmed Mode
-		//}
-
 		Datas[(int32)type]->GetAction()->SetEquipValue(NewItem->GetItemValue());
 	}
-	else if(Type == type)
+	else if (Type == type)
 	{
 		SetUnarmedMode();
 	}
-
-	CLog::Print(result ? "Equip" : "UnEquip");
-	CLog::Print((int)type);
 
 	AttachBind(type, attach);
 }
@@ -220,11 +195,6 @@ void UCActionComponent::SetLoadMode()
 
 void UCActionComponent::DoAction()
 {
-	// owner check 하여 Enemy_base를 상속 받는 녀석이라면 가능하도록?
-	//if(GetOwner() )
-	//CLog::Print(GetOwner()->GetName());
-	//CheckTrue(IsUnarmedMode());	// 무기를 들고 있을 때만?
-
 
 	if (!!Datas[(int32)Type])
 	{
@@ -271,6 +241,32 @@ void UCActionComponent::CancelSpecial()
 	}
 }
 
+void UCActionComponent::AddCharge(float value)
+{
+	if (!!Datas[(int32)Type])
+	{
+		ACAction* action = Datas[(int32)Type]->GetAction();
+
+		if (!!action)
+		{
+			action->AddCharge(value);
+		}
+	}
+}
+
+void UCActionComponent::ReleaseSpecial()
+{
+	if (!!Datas[(int32)Type])
+	{
+		ACAction* action = Datas[(int32)Type]->GetAction();
+
+		if (!!action)
+		{
+			action->ReleaseSpecial();
+		}
+	}
+}
+
 void UCActionComponent::Dead()
 {
 	OffAllCollision();
@@ -301,11 +297,8 @@ void UCActionComponent::AbortByDamage()
 {
 }
 
-
 void UCActionComponent::SetMode(EActionType InType)
 {
-	//CheckTrue()
-
 	if (Type == InType)
 	{
 		SetUnarmedMode();

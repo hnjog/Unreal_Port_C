@@ -56,6 +56,8 @@ private:
 	bool bExistSpecial;
 	bool bLastSpecial;
 
+	float HitStopRate = 0.2f;
+
 	// 다단히트 방지용
 	TArray<class ACharacter*> HittedCharacters;
 	// 경직용

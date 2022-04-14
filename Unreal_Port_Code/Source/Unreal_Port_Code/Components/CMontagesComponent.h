@@ -38,7 +38,7 @@ private:
 		UDataTable* DataTable;
 
 public:
-	FORCEINLINE bool IsDataValid(EStateType state) { return (!!Datas[(int32)state]); }
+	bool IsDataValid(EStateType state);
 
 public:	
 	UCMontagesComponent();
@@ -48,6 +48,7 @@ public:
 	void PlayStiff();
 	void PlayDead();
 	void PlayWakeUp();
+	void PlayDodge();
 
 	// AI
 	void PlayTaunt();
@@ -57,16 +58,11 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void PlayAnimMontage(EStateType InStateType);
+	void PlayAnimMontage(EStateType InStateType, int32 index = 0);
+
+	float Calculate(const FVector& Velocity, const FRotator& BaseRotation);
 
 private:
-	FMontageData* Datas[(int32)EStateType::Max];
+	FMontageData* Datas[(int32)EStateType::Max][10];
 
 };
-
-/*
-	이걸 캐릭터 기반 녀석들에게 넣어주면
-	되긴 하는데...
-
-
-*/

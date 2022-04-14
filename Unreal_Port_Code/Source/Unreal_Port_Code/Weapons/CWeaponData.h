@@ -36,6 +36,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 		TArray<FSpecialData> DoSpecialDatas;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+		TArray<FAirComboData> AirComboDatas;
+
+	//FAirComboData
 };
 
 /*

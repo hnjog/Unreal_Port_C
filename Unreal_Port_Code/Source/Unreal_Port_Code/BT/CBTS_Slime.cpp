@@ -96,6 +96,7 @@ void UCBTS_Slime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 		if (bDiscover == false && behavior->IsDiscoverMode() == false)
 		{
 			behavior->SetDiscoverMode();
+			//CLog::Print("In Detect");
 			SearchTime = 0.0f;
 			bDiscover = true;
 			return;

@@ -70,6 +70,21 @@ void UCStateComponent::SetWakeUpMode()
 	ChangeType(EStateType::WakeUp);
 }
 
+void UCStateComponent::SetRushMode()
+{
+	ChangeType(EStateType::Rush);
+}
+
+void UCStateComponent::SetAirComboWaitMode()
+{
+	ChangeType(EStateType::AirComboWait);
+}
+
+void UCStateComponent::SetAirComboMode()
+{
+	ChangeType(EStateType::AirCombo);
+}
+
 void UCStateComponent::SetDiscoverMode()
 {
 	ChangeType(EStateType::Discover);

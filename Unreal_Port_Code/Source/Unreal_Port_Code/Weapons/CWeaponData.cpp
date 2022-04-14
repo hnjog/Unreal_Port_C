@@ -45,6 +45,7 @@ void UCWeaponData::BeginPlay(class ACharacter* InOwnerCharacter, class UCWeapon*
 		Action->AttachToComponent(InOwnerCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::KeepRelative, true));
 		Action->SetActionDatas(DoActionDatas);
 		Action->SetSpecialDatas(DoSpecialDatas);
+		Action->SetAirComboDatas(AirComboDatas);
 		Action->SetActorLabel(GetLabelName(InOwnerCharacter, "Action"));
 		UGameplayStatics::FinishSpawningActor(Action, transform);
 

@@ -37,8 +37,6 @@ public:
 	FORCEINLINE float GetSpecialRange() const { return SpecialRange; }
 	float GetSightMaxAge();
 
-	//FORCEINLINE class UCBehaviorComponent* GetBehaviorComp() { return Behavior;}
-
 public:
 	ACBase_AIController();
 

@@ -88,15 +88,3 @@ private:
 	void ChangeStanceType(EEnemyStance InNewType);
 
 };
-
-/*
-	Stance
-	- 일반 상태
-	- 배틀 상태
-	- 의심 상태
-
-	-> Anim 쪽에서 사용할 녀석들임
-	-> delegate에 bind 시켜주자
-
-
-*/

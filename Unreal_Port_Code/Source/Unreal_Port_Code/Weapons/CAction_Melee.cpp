@@ -4,9 +4,12 @@
 #include"Components/CStateComponent.h"
 #include"Components/CStatusComponent.h"
 #include<Weapons/CDamageType_LastCombo.h>
+#include<Weapons/CDamageType_AirCombo.h>
+#include<Weapons/CDamageType_AirLast.h>
 #include<Weapons/CDamageType_Counter.h>
 #include<Weapons/CSpecialPoint.h>
 #include"Interfaces/ICharacter.h"
+#include"Characters/CPlayer.h"
 
 void ACAction_Melee::BeginPlay()
 {
@@ -19,6 +22,10 @@ void ACAction_Melee::BeginPlay()
 
 	GuardPoint->OnGuardPointBeginOverlap.AddDynamic(this, &ACAction_Melee::OnGuardPointBeginOverlap);
 	GuardPoint->OnGuardPointEndOverlap.AddDynamic(this, &ACAction_Melee::OnGuardPointEndOverlap);
+
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+	CheckNull(player);
+	OnAirCombo.BindUFunction(player, "End_AirCombo");
 }
 
 void ACAction_Melee::Tick(float DeltaTime)
@@ -44,12 +51,19 @@ void ACAction_Melee::DoAction()
 	}
 
 	// 외부에서 캐릭터가 Idle 체크를 하고 여기 들어와야 하긴 함
-	CheckFalse(State->IsIdleMode());
-	State->SetActionMode();
+	if (State->IsIdleMode() == true)
+	{
+		State->SetActionMode();
 
-	OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
-	Datas[0].bCanMove ? Status->SetMove() : Status->SetStop();
-	//Datas[Index].bPawnControl ? Status-
+		OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
+		Datas[0].bCanMove ? Status->SetMove() : Status->SetStop();
+		//Datas[Index].bPawnControl ? Status-
+	}
+	else if (State->IsAirComboWaitMode() == true && bEnableAirCombo == true)
+	{
+		State->SetAirComboMode();
+		OwnerCharacter->PlayAnimMontage(AirComboDatas[0].AnimMontage, AirComboDatas[0].PlayRate, AirComboDatas[0].StartSection);
+	}
 }
 
 void ACAction_Melee::Begin_DoAction()
@@ -59,28 +73,55 @@ void ACAction_Melee::Begin_DoAction()
 	CheckFalse(bExistAttack);
 	bExistAttack = false;
 
-	// 현재 몽타주를 멈추는 용도
-	OwnerCharacter->StopAnimMontage();
-	IndexAttack++;
-	FMath::Clamp<int32>(IndexAttack, 0, Datas.Num() - 1);
-
 	HittedCharacters.Empty();
 
-	OwnerCharacter->PlayAnimMontage(Datas[IndexAttack].AnimMontage, Datas[IndexAttack].PlayRate, Datas[IndexAttack].StartSection);
-	Datas[IndexAttack].bCanMove ? Status->SetMove() : Status->SetStop();
+	// 현재 몽타주를 멈추는 용도
+	if (State->IsAirComboMode() == true && bEnableAirCombo == true)
+	{
+		OwnerCharacter->StopAnimMontage();
+		IndexAir++;
+		FMath::Clamp<int32>(IndexAir, 0, AirComboDatas.Num() - 1);
+
+		OwnerCharacter->PlayAnimMontage(AirComboDatas[IndexAir].AnimMontage, AirComboDatas[IndexAir].PlayRate, AirComboDatas[IndexAir].StartSection);
+		AirComboDatas[IndexAir].bCanMove ? Status->SetMove() : Status->SetStop();
+
+		if (IndexAir == AirComboDatas.Num() - 1)
+		{
+			bEnableAirCombo = false;
+		}
+	}
+	else
+	{
+		OwnerCharacter->StopAnimMontage();
+		IndexAttack++;
+		FMath::Clamp<int32>(IndexAttack, 0, Datas.Num() - 1);
+
+		OwnerCharacter->PlayAnimMontage(Datas[IndexAttack].AnimMontage, Datas[IndexAttack].PlayRate, Datas[IndexAttack].StartSection);
+		Datas[IndexAttack].bCanMove ? Status->SetMove() : Status->SetStop();
+	}
 }
 
 void ACAction_Melee::End_DoAction()
 {
 	Super::End_DoAction();
 
-	OwnerCharacter->StopAnimMontage(Datas[IndexAttack].AnimMontage);
-	IndexAttack = 0;
-
 	HittedCharacters.Empty();
-	
-	State->SetIdleMode();
-	Status->SetMove();
+	if (State->IsAirComboMode() == true)
+	{
+		OwnerCharacter->StopAnimMontage(AirComboDatas[IndexAir].AnimMontage);
+		IndexAir = 0;
+		bEnableAirCombo = true;
+
+		if (OnAirCombo.IsBound()) OnAirCombo.Execute();
+	}
+	else
+	{
+		OwnerCharacter->StopAnimMontage(Datas[IndexAttack].AnimMontage);
+		IndexAttack = 0;
+
+		State->SetIdleMode();
+		Status->SetMove();
+	}
 }
 
 void ACAction_Melee::DoSpecial()
@@ -137,26 +178,27 @@ void ACAction_Melee::OnAttachmentBeginOverlap(ACharacter* InAttacker, AActor* In
 {
 	Super::OnAttachmentBeginOverlap(InAttacker, InAttackCauser, InOtherCharacter);
 
-	// 슬라임 쪽에서 이게 호출되었을 가능성이 존재하지 않는가??
-
-	// 다단 히트 방지
 	for (const ACharacter* other : HittedCharacters)
 	{
 		if (InOtherCharacter == other)
 			return;
 	}
-	HittedCharacters.Add(InOtherCharacter);
+	//HittedCharacters.Add(InOtherCharacter);
+	HittedCharacters.AddUnique(InOtherCharacter);
 
-	// Hit Stop
-	float hitStop = Datas[IndexAttack].HitStop;
+	float hitStop = 0.0f;
+	if (State->IsAirComboMode() == false)
+		hitStop = Datas[IndexAttack].HitStop;
+
 	// float가 0에 매우 근접한가에 대해 (float는 정확히 0이 힘든 부동 소수점 값이기에)
 	if (FMath::IsNearlyZero(hitStop) == false) // hitstop에 0이 아닌 값이 들어갔다는 뜻
 	{
 		//0.02에 가까운 값
 		// 시간을 느리게도, 빠르게도 할수 있음
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate);
 		// 시간을 느려지게 했다면, 돌려놔야 함 (1)
-		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * 2e-2f, false);
+		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * HitStopRate, false);
 		/*
 		GetWorld()의 타이머, UKismeticsystemlibrary의 타이머
 		2가지의 차이점?
@@ -213,38 +255,33 @@ void ACAction_Melee::OnAttachmentBeginOverlap(ACharacter* InAttacker, AActor* In
 		e.DamageTypeClass = UCDamageType_LastCombo::StaticClass();
 	}
 
-	// 몬스터가 맨손 공격을 하는 경우에 대비
+	if (IndexAir == AirComboDatas.Num() - 1)
+	{
+		e.DamageTypeClass = UCDamageType_AirLast::StaticClass();
+		InOtherCharacter->TakeDamage(AirComboDatas[IndexAir].PowerRate * EquipValue, e, InAttacker->GetController(), InAttackCauser);
+		return;
+	}
+	else if (State->IsAirComboMode() == true)
+	{
+		e.DamageTypeClass = UCDamageType_AirCombo::StaticClass();
+		InOtherCharacter->TakeDamage(AirComboDatas[IndexAir].PowerRate * EquipValue, e, InAttacker->GetController(), InAttackCauser);
+		return;
+	}
+
 	if (FMath::IsNearlyZero(EquipValue) == true) EquipValue = 1.0f;
 
-	// Apply Damage의 역할 (이 함수가 블프의 데미지 역할을 다 함)
-	// 재정의도 가능하기에, Any Damage처럼 사용도 가능함
 	InOtherCharacter->TakeDamage(Datas[IndexAttack].PowerRate * EquipValue, e, InAttacker->GetController(), InAttackCauser);
 }
 
 void ACAction_Melee::OnAttachmentEndOverlap(ACharacter* InAttacker, AActor* InAttackCauser, ACharacter* InOtherCharacter)
 {
 	Super::OnAttachmentEndOverlap(InAttacker, InAttackCauser, InOtherCharacter);
-
-	
 }
 
 void ACAction_Melee::OnGuardPointBeginOverlap(class AActor* DefenseTo, class AActor* InAttackCauser)
 {
 	ACharacter* inOtherCharacter = Cast<ACharacter>(InAttackCauser->GetOwner());
 	CheckNull(inOtherCharacter);	// 나중에는 Guard로 전향시켜야 할지도?
-
-	//CLog::Print("OnEvent");
-
-	// 이거 적의 Attachment를 가져와야 하는 것은 아닌지??
-	// Attachment가 잡혔다는 것 자체가
-	// 이미 ActionMode라는 반증이 아닐까??
-
-	//UCStateComponent* anotherState = CHelpers::GetComponent<UCStateComponent>(inOtherCharacter);
-	//CheckNull(anotherState);
-	//CLog::Print("CheckActionMode");
-	//CheckTrue(anotherState->IsActionMode());
-
-	//CLog::Print("Attacked");
 
 	IICharacter* character = Cast<IICharacter>(OwnerCharacter);
 
@@ -284,7 +321,8 @@ void ACAction_Melee::OnGuardPointEndOverlap(ACharacter* InAttacker, AActor* InAt
 
 void ACAction_Melee::ResetGlobalDilation()
 {
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate, true);
 }
 
 void ACAction_Melee::Parrying(ACharacter* InAttacker, AActor* InAttackCauser, ACharacter* InOtherCharacter)
@@ -299,8 +337,9 @@ void ACAction_Melee::Parrying(ACharacter* InAttacker, AActor* InAttackCauser, AC
 	float hitStop = SpecialDatas[0].HitStop;
 	if (FMath::IsNearlyZero(hitStop) == false) // hitstop에 0이 아닌 값이 들어갔다는 뜻
 	{
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
-		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * 2e-2f, false);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate);
+		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * HitStopRate, false);
 	}
 
 	// Play Effect Particle
@@ -335,8 +374,9 @@ void ACAction_Melee::Guard()
 	float hitStop = SpecialDatas[1].HitStop;
 	if (FMath::IsNearlyZero(hitStop) == false) // hitstop에 0이 아닌 값이 들어갔다는 뜻
 	{
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
-		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * 2e-2f, false);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		CTimeDilationManager::SetGlobalTime(GetWorld(), HitStopRate);
+		UKismetSystemLibrary::K2_SetTimer(this, "ResetGlobalDilation", hitStop * HitStopRate, false);
 	}
 
 	// Play Effect Particle

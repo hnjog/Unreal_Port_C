@@ -14,6 +14,7 @@ public:
 	// ActionData에서 Spawn 시키면서 넣어줄 데이터들
 	FORCEINLINE void SetActionDatas(TArray<FActionData> InDatas) { Datas = InDatas; }
 	FORCEINLINE void SetSpecialDatas(TArray<FSpecialData> InDatas) { SpecialDatas = InDatas; }
+	FORCEINLINE void SetAirComboDatas(TArray<FAirComboData> InDatas) { AirComboDatas = InDatas; }
 	FORCEINLINE void SetEquipped(const bool* InEquipped) { bEquipped = InEquipped; }
 
 	FORCEINLINE float GetEquipValue() { return EquipValue; }
@@ -34,8 +35,11 @@ public:
 	virtual void Begin_Special() {};
 	virtual void End_Special() {};
 
+	virtual void AddCharge(float value) {};
+	virtual void ReleaseSpecial() {};
+
 	virtual void OnAim() {};
-	virtual void OffAim() {};
+	virtual void OffAim() {}
 
 public:
 	UFUNCTION()
@@ -63,6 +67,7 @@ protected:
 protected:
 	TArray<FActionData> Datas;
 	TArray<FSpecialData> SpecialDatas;
+	TArray<FAirComboData> AirComboDatas;
 
 	const bool* bEquipped;
 

@@ -19,6 +19,15 @@ protected:
 		float Direction;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+		float Pitch;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+		bool Aim;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+		bool Falling;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 		EActionType ActionType;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)

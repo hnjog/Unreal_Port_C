@@ -8,16 +8,23 @@
 #include "Components/CMontagesComponent.h"
 #include<Weapons/CDamageType_LastCombo.h>
 #include<Weapons/CDamageType_Counter.h>
+#include<Weapons/CDamageType_AirCombo.h>
+#include<Weapons/CDamageType_AirLast.h>
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Curves/CurveFloat.h"
 #include<Materials/MaterialParameterCollection.h>
 #include<Kismet/KismetMaterialLibrary.h>
+#include<Widgets/CUserWidget_HealthBar.h>
+#include<Ablities/CTargetPoint.h>
 
 ACEnemy_Base::ACEnemy_Base()
 	:bDamagedLastAttack(false), WakeUpTimer(0.0f)
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	CHelpers::CreateComponent(this, &HealthWidget, "HealthWidget", GetRootComponent());
+	CHelpers::CreateComponent(this, &TargetPoint, "TargetPoint", GetMesh());
 
 	//Create ActorComponent
 	CHelpers::CreateActorComponent(this, &Status, "Status");
@@ -26,12 +33,20 @@ ACEnemy_Base::ACEnemy_Base()
 	CHelpers::CreateActorComponent(this, &Action, "Action");
 
 	CHelpers::GetAsset<UCurveFloat>(&Curve, "CurveFloat'/Game/Enemy/BaseAI/Curve_Special.Curve_Special'");
+
+	CHelpers::GetClass<UCUserWidget_HealthBar>(&HealthWidgetClass, "WidgetBlueprint'/Game/Widzets/WBP_Health.WBP_Health_C'");
+	HealthWidget->SetWidgetClass(HealthWidgetClass);
+	HealthWidget->SetRelativeLocation(FVector(0, 0, 80));
+	HealthWidget->SetDrawSize(FVector2D(70, 30));
+	HealthWidget->SetWidgetSpace(EWidgetSpace::Screen);
+
+	CHelpers::GetClass<ACTargetPoint>(&TargetClass, "Blueprint'/Game/Player/BP_CTargetPoint.BP_CTargetPoint_C'");
+
 }
 
 void ACEnemy_Base::BeginPlay()
 {
 	State->OnStateTypeChanged.AddDynamic(this, &ACEnemy_Base::OnStateTypeChanged);
-	// Delegate 로 Hit만 얻어와서, LastAttack때 사용하는 것은...?
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ACEnemy_Base::OnComponentHit);
 
 	GetCharacterMovement()->MaxWalkSpeed = Status->GetRunSpeed();
@@ -42,25 +57,37 @@ void ACEnemy_Base::BeginPlay()
 	GetMesh()->SetMaterial(0, BodyMaterial);
 
 	Super::BeginPlay();
+
+	if (!!GetController())
+	{
+		HealthWidget->InitWidget();
+
+		Cast<UCUserWidget_HealthBar>(HealthWidget->GetUserWidgetObject())->UpdateHealthBar(Status->GetHealth(), Status->GetMaxHealth());
+		Cast<UCUserWidget_HealthBar>(HealthWidget->GetUserWidgetObject())->SetVisible(false);
+	}
+
+	ACTargetPoint* targetPoint = GetWorld()->SpawnActorDeferred<ACTargetPoint>(TargetClass, TargetPoint->GetComponentTransform(), this);
+	targetPoint->AttachToComponent(TargetPoint, FAttachmentTransformRules(EAttachmentRule::KeepRelative, true));
+	targetPoint->SetActorRelativeLocation(FVector::ZeroVector);
+	targetPoint->TargetWidgetVisible(false);
+	UGameplayStatics::FinishSpawningActor(targetPoint, TargetPoint->GetComponentTransform());
+	Targets.AddUnique(targetPoint);
 }
 
 void ACEnemy_Base::Tick(float DeltaTime)
 {
 	if (bUseLerpTurn == true)
 	{
-		//CLog::Print("In");
 		LerpTurn(DeltaTime);
 	}
 
-	if (State->IsKnockOutMode() == true) //  && GetCharacterMovement()->IsFalling() == false
+	if (State->IsKnockOutMode() == true)
 	{
 		Popcorn();
 
 		CheckTrue(GetCharacterMovement()->IsFalling());
 
 		WakeUpTimer += DeltaTime;
-
-		//CLog::Print(WakeUpTimer, 5);
 
 		if (WakeUpTimer >= WakeUpTime && FMath::IsNearlyZero(GetVelocity().Size()) == true)
 		{
@@ -79,7 +106,7 @@ float ACEnemy_Base::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 	Action->AbortByDamage();
 	AboryByDamage();
 
-	Status->SubHealth(damage);
+	DamageUpdate(damage);
 
 	if (Status->GetHealth() <= 0.0f)
 	{
@@ -87,21 +114,47 @@ float ACEnemy_Base::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		return 0.0f;
 	}
 
+	if (DamageEvent.DamageTypeClass == UCDamageType_AirLast::StaticClass())
+	{
+		ComboCount = 0;
+		Action->CancelSpecial();
+		if (State->IsKnockOutMode() == false)
+			bDamagedLastAttack = true;
+		State->SetKnockOutMode();
+		LauchUpValue = 0.0f;
+		return Status->GetHealth();
+	}
+
+	if (DamageEvent.DamageTypeClass == UCDamageType_AirCombo::StaticClass())
+	{
+		ComboCount++;
+		State->SetStiffMode();
+		return Status->GetHealth();
+	}
+
 	if (DamageEvent.DamageTypeClass == UCDamageType_LastCombo::StaticClass())
 	{
+		ComboCount = 0;
+		Action->CancelSpecial();
+		if (State->IsKnockOutMode() == false)
+			bDamagedLastAttack = true;
 		State->SetKnockOutMode();
-		bDamagedLastAttack = true;
+		LauchUpValue = 1000.0f;
 		return Status->GetHealth();
 	}
 
 	if (DamageEvent.DamageTypeClass == UCDamageType_Counter::StaticClass())
 	{
+		Action->CancelSpecial();
 		State->SetStiffMode();
 		return Status->GetHealth();
 	}
 
-	State->SetHittedMode();
-	bDamagedLastAttack = false;
+	if (State->IsKnockOutMode() == false)
+	{
+		State->SetHittedMode();
+		bDamagedLastAttack = false;
+	}
 
 
 	return Status->GetHealth();
@@ -109,10 +162,6 @@ float ACEnemy_Base::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 
 void ACEnemy_Base::AboryByDamage()
 {
-	// 피격 시 몽타주를 멈추도록
-	// 슈퍼 아머 등을 고려하는 것은?
-	// 그 경우 경직치나 피격 치 등을 고려해야 한다고 생각함
-	// 이쪽 말고 TakeDamage 쪽에 넣어도 되고
 	StopAnimMontage();
 }
 
@@ -140,6 +189,27 @@ void ACEnemy_Base::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	}
 }
 
+void ACEnemy_Base::DamageUpdate(float amount, bool bDamage)
+{
+	if (bDamage)
+	{
+		Status->SubHealth(amount);
+	}
+	else
+	{
+		Status->AddHealth(amount);
+	}
+
+	Cast<UCUserWidget_HealthBar>(HealthWidget->GetUserWidgetObject())->UpdateHealthBar(Status->GetHealth(), Status->GetMaxHealth());
+	Cast<UCUserWidget_HealthBar>(HealthWidget->GetUserWidgetObject())->SetVisible(true);
+	UKismetSystemLibrary::K2_SetTimer(this, "OffHealthUI", HealthUIOnTime, false);
+}
+
+void ACEnemy_Base::OffHealthUI()
+{
+	Cast<UCUserWidget_HealthBar>(HealthWidget->GetUserWidgetObject())->SetVisible(false);
+}
+
 void ACEnemy_Base::Idle()
 {
 	BodyMaterial->SetScalarParameterValue("Intensity", 0.0f);
@@ -163,6 +233,7 @@ void ACEnemy_Base::Taunt()
 void ACEnemy_Base::Stiff()
 {
 	Montages->PlayStiff();
+	End_Popcorn();
 }
 
 void ACEnemy_Base::DiscoverTarget()
@@ -177,6 +248,11 @@ void ACEnemy_Base::Dead()
 	Action->Dead();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	for (ACTargetPoint* target : Targets)
+	{
+		target->Destroy();
+	}
+
 	Montages->PlayDead();
 }
 
@@ -189,8 +265,6 @@ void ACEnemy_Base::End_Hit()
 
 void ACEnemy_Base::End_Dead()
 {
-	// 지워줄 요소를 넣어야 함
-	// 이걸 사용한다면 super를 가장 마지막에 호출해야 할듯
 	Action->End_Dead();
 	Destroy();
 }
@@ -233,30 +307,24 @@ void ACEnemy_Base::LaunchByHitted()
 
 	FVector Direction = HittedResult.ImpactNormal * LauchValue + up * LauchUpValue;
 
+	/*
+		현재 가해지는 양이,
+		충격량이 이미 존재한다면, 양을 조절하는 것이 좋을듯 함
+	*/
+
+	if (FMath::IsNearlyZero(GetVelocity().Size(), 2.0f) == false)
+	{
+		Direction *= 0.5f;
+	}
 
 	LaunchCharacter(Direction, false, true);
 }
 
 void ACEnemy_Base::Popcorn()
 {
-	// Popcorn
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-
 	StopAnimMontage();
 
 	GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
-	
-	// 여기서 액터의 위치로 Tick마다 조정해주면 되지 않을까??
-	/*if (GetCharacterMovement()->IsFalling() == true)
-	{
-		
-		GetMesh()->SetWorldLocation(GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
-	}
-	else
-	{
-		SetActorLocation(GetMesh()->GetComponentLocation());
-	}*/
 
 	GetMesh()->SetSimulatePhysics(true);
 }
@@ -265,11 +333,9 @@ void ACEnemy_Base::End_Popcorn()
 {
 	bUseLerpTurn = false;
 	FixMesh();
-	//GetMesh()->AttachTo(GetCapsuleComponent());
 	GetMesh()->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	GetMesh()->SetWorldTransform(GetActorTransform());
 
-	// 이 부분도 차후 수정이 필요할 수 있다고 봄
 	GetMesh()->AddRelativeLocation(FVector(0, 0, -40));
 	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 }
@@ -284,15 +350,9 @@ void ACEnemy_Base::FixMesh()
 
 void ACEnemy_Base::LerpTurn(float Delta)
 {
-	//CLog::Print("LerpIn!", 7);
-
 	FRotator rotator = GetMesh()->GetComponentRotation();
 	FRotator target = GetActorRotation() + FRotator(0, -90, 0);
 
-	//CLog::Print(rotator, 8);
-
-	// x쪽은 상관없고 오히려 끝났을 때 그 값으로 바꾸는게 나을듯 한데
-	// 그냥 rotator 값으로 체크하는게 나을듯
 	if (rotator.Equals(target, 0.2f) == true)
 	{
 		End_Popcorn();

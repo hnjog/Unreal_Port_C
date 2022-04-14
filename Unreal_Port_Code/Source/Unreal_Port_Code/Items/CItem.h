@@ -20,7 +20,6 @@ public:
 
 	UPROPERTY()
 		class UWorld* World;
-	//spawn 등에 사용한다던가 등등
 
 	// equip, use type
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Item")
@@ -75,12 +74,10 @@ public:
 
 public:
 	// AInventorySystemCharacter
-	// get component 등으로 inventory class 를 가지고 있는지를 확인하는 게?
 	virtual void Use(class AActor* Actor) {};	// 사용
 
 
 	////BI - 블프에서 구현하도록 (컴포넌트로 구현하는 것도 고려해야 하긴 하는데.., event 처럼 가상은 여기 들어갈수 없나)
-	// 추가적인 조치를 해야 할듯
 	UFUNCTION(BlueprintImplementableEvent)
 		void OnUse(class AActor* Actor);
 

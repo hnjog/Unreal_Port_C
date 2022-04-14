@@ -25,15 +25,23 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Health")
 		float MaxHealth = 100.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Focus")
+		float MaxFocusAmount = 5.0f;
+
 public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxFocusAmount() const { return MaxFocusAmount; }
+	FORCEINLINE float GetFocusAmount() const { return FocusAmount; }
 
 	FORCEINLINE float GetCrouchSpeed() const { return CrouchSpeed; }
 	FORCEINLINE float GetRunSpeed() const { return RunSpeed; }
 	FORCEINLINE float GetSprintSpeed() const { return SprintSpeed; }
 
 	FORCEINLINE bool CanMove() const { return bCanMove; }
+	FORCEINLINE bool CanFocus() const { return FocusAmount >= 1.0f; }
+	FORCEINLINE bool NotFullFocus() const { return FocusAmount < MaxFocusAmount; }
+	
 
 public:
 	void SetMove();
@@ -44,11 +52,15 @@ public:
 
 	void SubHealth(float InAmount);
 
+	void AddFocus(float Amount);
+	void SubFocus(float Amount);
+
 protected:
 	virtual void BeginPlay() override;
 
 private:
 	bool bCanMove = true;
 	float Health;
+	float FocusAmount;
 
 };

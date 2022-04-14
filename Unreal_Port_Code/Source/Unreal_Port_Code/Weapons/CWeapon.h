@@ -50,7 +50,6 @@ public:
 
 };
 
-
 USTRUCT(BlueprintType)
 struct FSpecialData : public FEquipmentData
 {
@@ -74,6 +73,28 @@ public:
 
 };
 
+USTRUCT(BlueprintType)
+struct FAirComboData : public FEquipmentData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+		float PowerRate = 5.0f;
+
+	UPROPERTY(EditAnywhere)
+		float HitStop;
+
+	UPROPERTY(EditAnywhere)
+		class UParticleSystem* Effect;
+
+	UPROPERTY(EditAnywhere)
+		FTransform EffectTransform;
+
+	UPROPERTY(EditAnywhere)
+		TSubclassOf<class UCameraShake> ShakeClass;
+
+};
 
 UCLASS()
 class UNREAL_PORT_CODE_API UCWeapon : public UObject

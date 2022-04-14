@@ -4,6 +4,8 @@
 #include "Weapons/CAction.h"
 #include "CAction_Melee.generated.h"
 
+DECLARE_DELEGATE(FAirCombo);
+
 UCLASS()
 class UNREAL_PORT_CODE_API ACAction_Melee : public ACAction
 {
@@ -50,6 +52,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+public:
+	FAirCombo OnAirCombo;
+
 private:
 	void Parrying(ACharacter* InAttacker, AActor* InAttackCauser, ACharacter* InOtherCharacter);
 	void Guard();
@@ -65,11 +70,16 @@ private:
 	bool bExistSpecial;
 	bool bLastSpecial;
 
+	int32 IndexAir = 0;
+	bool bEnableAirCombo = true;
+
 	//For Guard (어차피 Melee는 이걸로 통일할 생각이므로)
 	bool bOnGuard = false;
 	bool bParrying = false;
 	bool bSuccessGuard = false;
 	float GuardTimer = 0.0f;
+
+	float HitStopRate = 0.2f;
 
 	// 다단히트 방지용
 	TArray<class ACharacter*> HittedCharacters;
@@ -81,77 +91,19 @@ private:
 };
 
 /*
-	210828 정리
-
-	해야 하는 것
-	Special 기능 (우클릭) 만들기
-
-	Melee 는 가드
-	-> Capsule Trace를 통해
-	부딪힌 것이 적이고,
-	공격 상태이면,
-	데미지 감소 및 경직 상태
-
-	(가드 중 전방이 아닌 다른 방향인 경우, 일반 Hitted가 됨 - 애초에 조건에 들어오지 않을듯)
-	(가드에 성공했으나, 데미지가 매우 강한 공격인 경우 (ex : player의 절반 이상의 체력),
-	player는 경직 상태에 빠짐 -> 다만 퍼펙트 가드는 예외 (시간을 기준으로 먼저 걸러내야 함))
-
-	퍼펙트 가드 (가드를 시작한 순간의 시간을 잰다)
-	(가드에 성공했을 때, 시간을 확인하여 0.3초 내외라면,
-	패링 모션과 함께, 부딪힌 적을 경직 상태로 만듦)
-	( + 잠시 플레이어에게 무적 상태 부여???)
-
-	가드를 한손검에만 넣어야 하나??
-	-> 창과 대검에 다른 걸 넣기에는 너무 장대해지고,
-	코드를 또 갈아 엎어야 함
-
-	스페셜 자체는 내버려 두되,
-	bool 값과 tick 이용
-
-	Montage를 누르며, Up 했을때의 그것이 필요
-	(우클릭을 땟을때, bool 값을 false로 해야 함)
-
-	UDamageType을 추가하여
-	으로 반격할 때, 소량의 Damage와
-	경직 상태로 만듦
-
-	요점은 Guard 상태를 만드는 것
-	-> 정확히는 Special임
-
-	따라서 Special 상태에는
-	무기에 따라 Guard 상태로 전환
-	(-> 따로따로 블렌드 해주기 보다는 무기 상태에 따라서 blend를 하는 것이
-	bone 개수를 적게 먹을 것임)
-	(무기 blend 끝난 이후 -> guard 상태에 따른 blend + 각기 다른 애니메이션이지만,
-	무기 상태에 따라서 분류가 가능함)
-
-	가드 상태에서는
-	Tick으로 적의 공격을 판별함
-
-	+
-	DoSpecial은 가드를 시작함
-	-> 여기서는 몽타주가 필요 없음
-
-	begin_Special은 딱히..?
-	(내버려는 두자)
-
-	오히려 Parrying과
-	Guard 함수를 만들어야 함
-	+ End_Special에서 원래 상태로 되돌림
-
-	우클릭을 땔 때의
-	반응이 필요함
-	(괜히 FlipFlop으로 만들었다가, 나중에 꼬일 염려가 존재하기에)
-
-	 가드 기능이 지나치게 Action_Melee에 가까운 것은 아닌가?
+	궁중 공격의 재입력 대기 시간이 지난 경우, (combo)
+	End_DoAction으로 들어오기에
 	
-	 1. Enemy의 Do_Special은 순전히 공격 기능용이며,
-	 player의 방어 상태를 무력화 시킴
-	
-	 2. 근데 Melee로 잡아둔 enemy의 공격 기능이
-	 Do_Special() 에서 Guard Point On으로 되어 있음
-	 (+ Action Melee가 일일이 방어 capsule collision을 생성)
+	Idle State로 변환됨
 
+	Idle 상태가 되는 경우,
+
+	1. AirCombo 상태에 진입하였으나,
+	1초 내에 재 공격이 이루어 지지 않음
+
+	2. AirCombo의 정해진 횟수를 모두 공격함
+
+	AirCombo End 등의 함수를 만들어 호출해야 함
 	
 
 */
